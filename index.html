@@ -1,0 +1,2021 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LEXICON — Tebak Kata Gaib</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+/* ════════════════════════════════════════════════
+   TOKENS
+════════════════════════════════════════════════ */
+:root {
+  --bg:          #080610;
+  --surface:     #100d1a;
+  --surface-2:   #18142a;
+  --surface-3:   #201a36;
+  --border:      #2e244a;
+  --border-glow: #6d4fc2;
+  --gold:        #e8b84b;
+  --gold-dim:    #9a7428;
+  --gold-glow:   #f7d980;
+  --gold-faint:  #3d2e0f;
+  --purple:      #7c3aed;
+  --purple-2:    #5b21b6;
+  --purple-hi:   #a78bfa;
+  --crimson:     #be123c;
+  --text:        #e2d5f8;
+  --text-muted:  #8b7aae;
+  --text-faint:  #46385e;
+  --tile-sz:     74px;
+  --tile-gap:    7px;
+
+  --tile-correct-bg: #14532d;
+  --tile-correct-bd: #4ade80;
+  --tile-correct-tx: #d1fae5;
+  --tile-present-bg: #78350f;
+  --tile-present-bd: #fbbf24;
+  --tile-present-tx: #fef3c7;
+  --tile-absent-bg:  #0a0812;
+  --tile-absent-bd:  #1c1530;
+  --tile-absent-tx:  #2e2445;
+
+  --key-bg:  #1e1633;
+  --key-bd:  #3d2f62;
+  --ease:    cubic-bezier(0.16,1,0.3,1);
+}
+
+/* ════════════════════════════════════════════════
+   RESET & BASE
+════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+body {
+  font-family: 'Cinzel', serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ════════════════════════════════════════════════
+   CANVAS BACKGROUND
+════════════════════════════════════════════════ */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.85;
+}
+
+/* noise grain */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  background-size: 256px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* All real content above canvas + grain */
+header, .app-body { position: relative; z-index: 2; }
+
+/* ════════════════════════════════════════════════
+   HEADER
+════════════════════════════════════════════════ */
+header {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 0 40px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid;
+  border-image: linear-gradient(90deg, transparent 0%, var(--gold-dim) 25%, var(--gold) 50%, var(--gold-dim) 75%, transparent 100%) 1;
+  background: linear-gradient(180deg, #0e0b1aee 0%, transparent 100%);
+  backdrop-filter: blur(4px);
+}
+
+.header-left, .header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 220px;
+}
+.header-right { justify-content: flex-end; }
+
+.header-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.header-stat-val {
+  font-size: 1.28rem;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+  text-shadow: 0 0 10px var(--gold-dim);
+}
+.header-stat-label {
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.header-divider {
+  width: 1px;
+  height: 28px;
+  background: linear-gradient(180deg, transparent, var(--border-glow), transparent);
+  opacity: 0.5;
+}
+
+/* ── LOGO ── */
+.logo-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.logo-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.logo-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(1.7rem, 2.8vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  background: linear-gradient(135deg, var(--gold-dim) 0%, var(--gold) 40%, var(--gold-glow) 60%, var(--gold-dim) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 16px #e8b84b44);
+  line-height: 1;
+}
+.logo-gem {
+  width: 22px;
+  height: 22px;
+  filter: drop-shadow(0 0 6px var(--gold-dim));
+}
+.logo-sub {
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 0.78rem;
+  letter-spacing: 0.3em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* ════════════════════════════════════════════════
+   APP BODY — 3-column layout
+════════════════════════════════════════════════ */
+.app-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 260px 1fr 260px;
+  grid-template-rows: 1fr;
+  min-height: 0;
+  padding: 0;
+}
+
+/* ════════════════════════════════════════════════
+   SIDE PANELS
+════════════════════════════════════════════════ */
+.side-panel {
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+.side-panel.right {
+  border-right: none;
+  border-left: 1px solid var(--border);
+}
+.side-panel::-webkit-scrollbar { width: 3px; }
+.side-panel::-webkit-scrollbar-thumb { background: var(--border-glow); border-radius: 2px; }
+
+/* panel card */
+.panel-card {
+  background: linear-gradient(135deg, #14102088, #1c162688);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.panel-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #ffffff06 0%, transparent 55%);
+  pointer-events: none;
+  border-radius: 8px;
+}
+/* corner ornaments */
+.panel-card::after {
+  content: '◆';
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 0.5rem;
+  color: var(--gold-dim);
+  opacity: 0.5;
+}
+
+.panel-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.panel-title::before {
+  content: '';
+  display: block;
+  width: 14px;
+  height: 1px;
+  background: var(--gold-dim);
+  opacity: 0.6;
+}
+
+/* ── LORE TEXT ── */
+.lore-text {
+  font-family: 'Crimson Pro', serif;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.lore-text strong {
+  color: var(--gold);
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* ── LEGEND / COLOR GUIDE ── */
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.legend-tile {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.legend-tile.c { background: var(--tile-correct-bg); border-color: var(--tile-correct-bd); color: var(--tile-correct-tx); box-shadow: 0 0 8px #4ade8033; }
+.legend-tile.p { background: var(--tile-present-bg); border-color: var(--tile-present-bd); color: var(--tile-present-tx); box-shadow: 0 0 8px #fbbf2433; }
+.legend-tile.a { background: var(--tile-absent-bg);  border-color: var(--tile-absent-bd);  color: var(--tile-absent-tx); }
+.legend-desc {
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.94rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.legend-desc strong { color: var(--text); font-weight: 600; font-style: normal; display: block; font-size: 0.85rem; letter-spacing: 0.04em; }
+
+/* ── ATTEMPT HISTORY ── */
+.history-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  height: 28px;
+}
+.history-mini {
+  width: 26px;
+  height: 26px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: transparent;
+  transition: all 0.3s var(--ease);
+}
+.history-mini.c { background: var(--tile-correct-bg); border-color: var(--tile-correct-bd); color: var(--tile-correct-tx); }
+.history-mini.p { background: var(--tile-present-bg); border-color: var(--tile-present-bd); color: var(--tile-present-tx); }
+.history-mini.a { background: var(--tile-absent-bg);  border-color: var(--tile-absent-bd);  color: var(--tile-absent-tx); }
+.history-row-num {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  width: 16px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.history-row-num.active { color: var(--purple-hi); }
+
+/* ── STATS BARS ── */
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.stat-label {
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  width: 76px;
+  flex-shrink: 0;
+}
+.stat-bar-wrap { flex: 1; height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.stat-bar {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--purple-2), var(--purple-hi));
+  transition: width 0.8s var(--ease);
+}
+.stat-val {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--gold);
+  width: 24px;
+  text-align: right;
+}
+
+/* ── ACHIEVEMENTS ── */
+.achievement {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: border-color 0.3s;
+}
+.achievement.unlocked { border-color: var(--gold-dim); }
+.achievement-icon { font-size: 1.2rem; width: 24px; text-align: center; }
+.achievement-info { flex: 1; }
+.achievement-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  text-transform: uppercase;
+  display: block;
+}
+.achievement.locked .achievement-name { color: var(--text-faint); }
+.achievement-desc {
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  display: block;
+}
+
+/* ── LETTER FREQUENCY CHART ── */
+.freq-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+.freq-letter {
+  width: 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.freq-bar-wrap { flex: 1; height: 5px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
+.freq-bar { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--purple-2), var(--purple-hi)); }
+.freq-bar.c-bar { background: linear-gradient(90deg, #166534, var(--tile-correct-bd)); }
+.freq-bar.p-bar { background: linear-gradient(90deg, #78350f, var(--tile-present-bd)); }
+
+/* ════════════════════════════════════════════════
+   CENTER COLUMN
+════════════════════════════════════════════════ */
+.center-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  padding: 16px 20px;
+  gap: 12px;
+  min-height: 0;
+  height: 100%;
+}
+
+/* ── GRID ── */
+#grid {
+  display: grid;
+  grid-template-rows: repeat(6, var(--tile-sz));
+  grid-template-columns: repeat(5, var(--tile-sz));
+  gap: var(--tile-gap);
+  filter: drop-shadow(0 0 30px #4c1d9522);
+}
+
+.tile {
+  width: var(--tile-sz);
+  height: var(--tile-sz);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  user-select: none;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text-faint);
+  border-radius: 5px;
+  transition: border-color 80ms, background 80ms;
+  position: relative;
+  overflow: hidden;
+}
+.tile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #ffffff07 0%, transparent 60%);
+  pointer-events: none;
+}
+.tile.filled {
+  border-color: var(--border-glow);
+  color: var(--text);
+  background: var(--surface-2);
+  box-shadow: 0 0 10px #7c3aed25;
+  animation: tile-pop 0.1s var(--ease);
+}
+.tile.correct {
+  background: var(--tile-correct-bg);
+  border-color: var(--tile-correct-bd);
+  color: var(--tile-correct-tx);
+  box-shadow: 0 0 18px #4ade8055, inset 0 1px 0 #4ade8022;
+  text-shadow: 0 0 10px #4ade80bb;
+}
+.tile.present {
+  background: var(--tile-present-bg);
+  border-color: var(--tile-present-bd);
+  color: var(--tile-present-tx);
+  box-shadow: 0 0 18px #fbbf2455, inset 0 1px 0 #fbbf2422;
+  text-shadow: 0 0 10px #fbbf24bb;
+}
+.tile.absent {
+  background: var(--tile-absent-bg);
+  border-color: var(--tile-absent-bd);
+  color: var(--tile-absent-tx);
+}
+
+@keyframes tile-pop {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.tile.flip { animation: flip-tile 0.52s ease-in-out forwards; }
+@keyframes flip-tile {
+  0%  { transform: rotateX(0deg); }
+  40% { transform: rotateX(-90deg); }
+  60% { transform: rotateX(-90deg); }
+  100%{ transform: rotateX(0deg); }
+}
+.tile.shake { animation: shake 0.42s var(--ease); }
+@keyframes shake {
+  0%,100%{ transform:translateX(0); }
+  12%    { transform:translateX(-9px); }
+  35%    { transform:translateX(9px); }
+  55%    { transform:translateX(-6px); }
+  75%    { transform:translateX(6px); }
+  90%    { transform:translateX(-2px); }
+}
+.tile.bounce { animation: bounce-win 0.55s cubic-bezier(0.36,0.07,0.19,0.97) forwards; }
+@keyframes bounce-win {
+  0%,100%{ transform:translateY(0) scale(1); }
+  35%    { transform:translateY(-22px) scale(1.06); }
+  55%    { transform:translateY(-10px) scale(1.02); }
+  75%    { transform:translateY(-16px) scale(1.04); }
+}
+
+/* ── KEYBOARD ── */
+#keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  align-items: center;
+  width: 100%;
+  max-width: 520px;
+}
+.kb-row { display: flex; gap: 5px; justify-content: center; }
+.key {
+  height: 58px;
+  min-width: 44px;
+  padding: 0 5px;
+  background: linear-gradient(170deg, #201838 0%, #160f28 100%);
+  border: 1px solid var(--key-bd);
+  color: var(--text);
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  overflow: hidden;
+  transition:
+    background 180ms var(--ease),
+    border-color 180ms var(--ease),
+    color 180ms var(--ease),
+    box-shadow 180ms var(--ease),
+    transform 80ms var(--ease);
+}
+.key::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, #ffffff09 0%, transparent 55%);
+  pointer-events: none;
+}
+.key:hover { border-color: var(--border-glow); box-shadow: 0 0 8px #6d4fc230; transform: translateY(-1px); }
+.key:active { transform: scale(0.93) translateY(0); }
+.key.wide { min-width: 68px; font-size: 0.72rem; }
+
+/* key states */
+.key.correct {
+  background: linear-gradient(170deg, #165a2a, #0e3d1a);
+  border-color: var(--tile-correct-bd);
+  color: var(--tile-correct-tx);
+  box-shadow: 0 0 10px #4ade8035;
+  text-shadow: 0 0 6px #4ade8077;
+}
+.key.present {
+  background: linear-gradient(170deg, #7a400e, #532c09);
+  border-color: var(--tile-present-bd);
+  color: var(--tile-present-tx);
+  box-shadow: 0 0 10px #fbbf2435;
+  text-shadow: 0 0 6px #fbbf2477;
+}
+.key.absent {
+  background: linear-gradient(170deg, #080610, #050408);
+  border-color: #120e1e;
+  color: #1e1633;
+  box-shadow: none;
+}
+.key.absent:hover { border-color: #1c1530; box-shadow: none; transform: none; }
+
+/* ── ACTION AREA ── */
+#action-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+}
+#play-again {
+  display: none;
+  padding: 11px 36px;
+  background: linear-gradient(135deg, #2d1b4e, #4c1d95);
+  border: 1px solid var(--gold-dim);
+  color: var(--gold);
+  font-family: 'Cinzel', serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  border-radius: 5px;
+  cursor: pointer;
+  box-shadow: 0 0 24px #4c1d9555, 0 4px 16px #00000066;
+  position: relative;
+  overflow: hidden;
+  transition: background 180ms var(--ease), border-color 180ms var(--ease), box-shadow 180ms var(--ease), transform 100ms var(--ease);
+}
+#play-again::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #ffffff0b, transparent);
+  pointer-events: none;
+}
+#play-again:hover { background: linear-gradient(135deg, #3d2660, #6d28d9); border-color: var(--gold); box-shadow: 0 0 32px #7c3aed66, 0 4px 20px #00000088; transform: translateY(-1px); }
+#play-again:active { transform: translateY(0); }
+#play-again.visible { display: block; }
+
+/* ── ATTEMPT PIPS ── */
+.pips-wrap {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 0;
+}
+.pip {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+.pip.used { background: var(--gold-dim); border-color: var(--gold); box-shadow: 0 0 6px var(--gold-dim); }
+.pip.active { background: var(--purple); border-color: var(--purple-hi); box-shadow: 0 0 10px var(--purple); animation: pip-pulse 1s ease-in-out infinite; }
+@keyframes pip-pulse { 0%,100%{box-shadow:0 0 4px var(--purple);} 50%{box-shadow:0 0 14px var(--purple-hi);} }
+
+/* ════════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════════ */
+#toast-container {
+  position: fixed;
+  top: 78px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  background: linear-gradient(135deg, #1c1430, #2e1b50);
+  border: 1px solid var(--gold-dim);
+  color: var(--gold-glow);
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 10px 24px;
+  border-radius: 5px;
+  opacity: 1;
+  box-shadow: 0 4px 28px #00000099, 0 0 16px #e8b84b22;
+  transition: opacity 0.45s cubic-bezier(0.4,0,1,1);
+  white-space: nowrap;
+}
+.toast.fade-out { opacity: 0; }
+
+/* ════════════════════════════════════════════════
+   LOADING
+════════════════════════════════════════════════ */
+#loading {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: var(--bg);
+  z-index: 999;
+}
+.loading-crystal {
+  font-size: 3rem;
+  animation: load-spin 1.8s linear infinite;
+  filter: drop-shadow(0 0 14px var(--gold));
+  color: var(--gold);
+}
+@keyframes load-spin {
+  0%  { transform: rotate(0deg) scale(1); opacity: 0.5; }
+  50% { opacity: 1; transform: rotate(180deg) scale(1.1); }
+  100%{ transform: rotate(360deg) scale(1); opacity: 0.5; }
+}
+.loading-text {
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 1rem;
+  letter-spacing: 0.18em;
+  color: var(--text-muted);
+}
+
+/* ════════════════════════════════════════════════
+   RESPONSIVE — tablets / smaller laptops
+════════════════════════════════════════════════ */
+@media (max-width: 1100px) {
+  .app-body { grid-template-columns: 220px 1fr 220px; }
+  .side-panel { padding: 20px 14px; }
+}
+@media (max-width: 860px) {
+  .app-body { grid-template-columns: 1fr; }
+  .side-panel { display: none; }
+  body { overflow-y: auto; }
+  .center-col { padding: 16px 12px 16px; justify-content: flex-start; }
+  :root { --tile-sz: 58px; --tile-gap: 5px; }
+  .key { height: 48px; min-width: 34px; }
+  .key.wide { min-width: 52px; }
+}
+@media (max-width: 400px) {
+  :root { --tile-sz: 50px; --tile-gap: 4px; }
+  .key { min-width: 30px; height: 44px; font-size: 0.68rem; }
+  .key.wide { min-width: 46px; }
+}
+
+/* ════════════════════════════════════════════════
+   SCROLLBAR
+════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border-glow); border-radius: 3px; }
+
+/* ════════════════════════════════════════════════
+   DICT BUTTON
+════════════════════════════════════════════════ */
+.dict-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  background: linear-gradient(135deg, #1e1438, #2d1b50);
+  border: 1px solid var(--gold-dim);
+  color: var(--gold);
+  font-family: 'Cinzel', serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 180ms var(--ease), border-color 180ms var(--ease), box-shadow 180ms var(--ease), transform 100ms var(--ease);
+  white-space: nowrap;
+}
+.dict-btn svg { flex-shrink: 0; }
+.dict-btn:hover {
+  background: linear-gradient(135deg, #2e1e52, #4c1d95);
+  border-color: var(--gold);
+  box-shadow: 0 0 16px #7c3aed44;
+  transform: translateY(-1px);
+}
+.dict-btn:active { transform: translateY(0); }
+
+/* ════════════════════════════════════════════════
+   DICTIONARY MODAL
+════════════════════════════════════════════════ */
+#dict-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000000cc;
+  backdrop-filter: blur(6px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s var(--ease);
+}
+#dict-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+#dict-modal {
+  width: min(92vw, 680px);
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(160deg, #120e20, #1a1230);
+  border: 1px solid var(--border-glow);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 60px #7c3aed44, 0 24px 64px #00000099;
+  transform: scale(0.94) translateY(12px);
+  transition: transform 0.28s var(--ease);
+}
+#dict-overlay.open #dict-modal {
+  transform: scale(1) translateY(0);
+}
+
+/* modal header */
+.dict-modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #1e1438 0%, transparent 100%);
+}
+.dict-modal-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold), var(--gold-glow));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.dict-close {
+  width: 32px; height: 32px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 150ms, border-color 150ms, color 150ms;
+  font-family: 'Cinzel', serif;
+  line-height: 1;
+}
+.dict-close:hover { background: var(--crimson); border-color: #ff4466; color: #fff; }
+
+/* search + filters */
+.dict-controls {
+  padding: 14px 24px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.dict-search-wrap {
+  flex: 1;
+  min-width: 160px;
+  position: relative;
+}
+.dict-search-wrap svg {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--text-muted);
+}
+#dict-search {
+  width: 100%;
+  padding: 9px 12px 9px 36px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  outline: none;
+  transition: border-color 150ms;
+}
+#dict-search::placeholder { color: var(--text-faint); font-style: italic; text-transform: none; font-family: 'Crimson Pro', serif; letter-spacing: 0.05em; }
+#dict-search:focus { border-color: var(--border-glow); box-shadow: 0 0 0 2px #7c3aed22; }
+
+.dict-filter-btn {
+  padding: 8px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-family: 'Cinzel', serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms, color 150ms;
+  white-space: nowrap;
+}
+.dict-filter-btn.active, .dict-filter-btn:hover {
+  background: var(--purple-2);
+  border-color: var(--purple-hi);
+  color: var(--text);
+}
+
+/* meta bar */
+.dict-meta {
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.dict-count {
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.dict-count strong { color: var(--gold); font-style: normal; }
+.dict-sort {
+  display: flex;
+  gap: 6px;
+}
+.dict-sort-btn {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-faint);
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 150ms;
+}
+.dict-sort-btn.active { background: var(--surface-2); border-color: var(--gold-dim); color: var(--gold); }
+.dict-sort-btn:hover { border-color: var(--border-glow); color: var(--text-muted); }
+
+/* word grid */
+#dict-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 24px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-content: flex-start;
+}
+#dict-grid::-webkit-scrollbar { width: 4px; }
+#dict-grid::-webkit-scrollbar-thumb { background: var(--border-glow); border-radius: 2px; }
+.dict-word {
+  padding: 6px 11px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: default;
+  transition: background 120ms, border-color 120ms, color 120ms, box-shadow 120ms;
+  user-select: none;
+}
+.dict-word:hover {
+  background: var(--surface-3);
+  border-color: var(--border-glow);
+  color: var(--text);
+  box-shadow: 0 0 6px #6d4fc230;
+}
+/* highlight if word contains searched letter */
+.dict-word.match-letter {
+  border-color: var(--purple);
+  color: var(--purple-hi);
+  background: #2d1b4e44;
+}
+.dict-word.match-exact {
+  border-color: var(--gold);
+  color: var(--gold-glow);
+  background: #3d2e0f66;
+  box-shadow: 0 0 8px #e8b84b33;
+  font-weight: 700;
+}
+.dict-word.used-word {
+  border-color: var(--tile-correct-bd);
+  color: var(--tile-correct-tx);
+  background: var(--tile-correct-bg);
+}
+/* empty state */
+.dict-empty {
+  width: 100%;
+  text-align: center;
+  padding: 40px 0;
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--text-faint);
+}
+  </style>
+</head>
+<body>
+
+<!-- Animated canvas background -->
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+<!-- Loading Screen -->
+<div id="loading" aria-live="polite" role="status">
+  <div class="loading-crystal" aria-hidden="true">✦</div>
+  <div class="loading-text">Memanggil kamus gaib...</div>
+</div>
+
+<!-- Toast -->
+<div id="toast-container" role="status" aria-live="polite"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <div class="header-stat">
+      <span class="header-stat-val" id="stat-played">0</span>
+      <span class="header-stat-label">Dimainkan</span>
+    </div>
+    <div class="header-divider"></div>
+    <div class="header-stat">
+      <span class="header-stat-val" id="stat-wins">0</span>
+      <span class="header-stat-label">Menang</span>
+    </div>
+    <div class="header-divider"></div>
+    <div class="header-stat">
+      <span class="header-stat-val" id="stat-streak">0</span>
+      <span class="header-stat-label">Streak</span>
+    </div>
+  </div>
+
+  <div class="logo-center">
+    <div class="logo-row">
+      <svg class="logo-gem" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+        <polygon points="11,1 19,6 19,16 11,21 3,16 3,6" stroke="#e8b84b" stroke-width="1.4" fill="#e8b84b08"/>
+        <polygon points="11,5 15,8 15,14 11,17 7,14 7,8"  stroke="#e8b84b55" stroke-width="0.9" fill="#e8b84b04"/>
+        <line x1="11" y1="1" x2="11" y2="21" stroke="#e8b84b22" stroke-width="0.7"/>
+        <line x1="3"  y1="6" x2="19" y2="16" stroke="#e8b84b22" stroke-width="0.7"/>
+        <line x1="19" y1="6" x2="3"  y2="16" stroke="#e8b84b22" stroke-width="0.7"/>
+        <circle cx="11" cy="11" r="1.8" fill="#e8b84b" opacity="0.8"/>
+      </svg>
+      <h1 class="logo-title">Lexicon</h1>
+      <svg class="logo-gem" viewBox="0 0 22 22" fill="none" aria-hidden="true" style="transform:scaleX(-1)">
+        <polygon points="11,1 19,6 19,16 11,21 3,16 3,6" stroke="#e8b84b" stroke-width="1.4" fill="#e8b84b08"/>
+        <polygon points="11,5 15,8 15,14 11,17 7,14 7,8"  stroke="#e8b84b55" stroke-width="0.9" fill="#e8b84b04"/>
+        <line x1="11" y1="1" x2="11" y2="21" stroke="#e8b84b22" stroke-width="0.7"/>
+        <line x1="3"  y1="6" x2="19" y2="16" stroke="#e8b84b22" stroke-width="0.7"/>
+        <line x1="19" y1="6" x2="3"  y2="16" stroke="#e8b84b22" stroke-width="0.7"/>
+        <circle cx="11" cy="11" r="1.8" fill="#e8b84b" opacity="0.8"/>
+      </svg>
+    </div>
+    <div class="logo-sub">Ungkap Kata Gaib</div>
+  </div>
+
+  <div class="header-right">
+    <div class="header-stat">
+      <span class="header-stat-val" id="stat-best">—</span>
+      <span class="header-stat-label">Terbaik</span>
+    </div>
+    <div class="header-divider"></div>
+    <div class="header-stat">
+      <span class="header-stat-val" id="stat-winrate">0%</span>
+      <span class="header-stat-label">Win Rate</span>
+    </div>
+    <div class="header-divider"></div>
+    <div class="header-stat">
+      <span class="header-stat-val" id="stat-maxstreak">0</span>
+      <span class="header-stat-label">Max Streak</span>
+    </div>
+    <div class="header-divider"></div>
+    <button class="dict-btn" id="open-dict" aria-label="Buka kamus">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      Kamus
+    </button>
+  </div>
+</header>
+
+<!-- DICTIONARY MODAL -->
+<div id="dict-overlay" role="dialog" aria-modal="true" aria-labelledby="dict-title">
+  <div id="dict-modal">
+    <div class="dict-modal-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e8b84b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span class="dict-modal-title" id="dict-title">Kamus Gaib</span>
+      </div>
+      <button class="dict-close" id="close-dict" aria-label="Tutup kamus">&times;</button>
+    </div>
+
+    <div class="dict-controls">
+      <div class="dict-search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="dict-search" placeholder="Cari kata atau huruf..." autocomplete="off" spellcheck="false" />
+      </div>
+      <button class="dict-filter-btn active" data-filter="all" id="flt-all">Semua</button>
+      <button class="dict-filter-btn" data-filter="starts" id="flt-starts">Awalan</button>
+      <button class="dict-filter-btn" data-filter="ends" id="flt-ends">Akhiran</button>
+      <button class="dict-filter-btn" data-filter="contains" id="flt-contains">Mengandung</button>
+    </div>
+
+    <div class="dict-meta">
+      <div class="dict-count" id="dict-count">Memuat...</div>
+      <div class="dict-sort">
+        <button class="dict-sort-btn active" data-sort="az" id="sort-az">A–Z</button>
+        <button class="dict-sort-btn" data-sort="za" id="sort-za">Z–A</button>
+        <button class="dict-sort-btn" data-sort="len" id="sort-len">Panjang</button>
+      </div>
+    </div>
+
+    <div id="dict-grid" role="list" aria-label="Daftar kata"></div>
+  </div>
+</div>
+
+<!-- APP BODY -->
+<div class="app-body">
+
+  <!-- LEFT PANEL -->
+  <aside class="side-panel left">
+
+    <!-- Lore / flavor text -->
+    <div class="panel-card">
+      <div class="panel-title">Lore Penyihir</div>
+      <p class="lore-text" id="lore-text">
+        Di menara kuno <strong>Arcanis</strong>, setiap kata menyimpan mantra.
+        Ungkap kata rahasia sebelum <strong>6 mantra</strong> habis, atau kekuatanmu
+        akan lenyap bersama kabut malam.
+      </p>
+    </div>
+
+    <!-- Legend guide -->
+    <div class="panel-card">
+      <div class="panel-title">Panduan Mantra</div>
+      <div class="legend-item">
+        <div class="legend-tile c">A</div>
+        <div class="legend-desc">
+          <strong>Rune Tepat</strong>
+          Huruf & posisi benar
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-tile p">B</div>
+        <div class="legend-desc">
+          <strong>Rune Salah Posisi</strong>
+          Huruf ada, posisi salah
+        </div>
+      </div>
+      <div class="legend-item" style="margin-bottom:0">
+        <div class="legend-tile a">C</div>
+        <div class="legend-desc">
+          <strong>Rune Gelap</strong>
+          Huruf tidak ada dalam kata
+        </div>
+      </div>
+    </div>
+
+    <!-- Guess distribution -->
+    <div class="panel-card">
+      <div class="panel-title">Distribusi Mantra</div>
+      <div id="dist-chart">
+        <div class="stat-row"><span class="stat-label">1 tebakan</span><div class="stat-bar-wrap"><div class="stat-bar" id="dist-1" style="width:0%"></div></div><span class="stat-val" id="dv-1">0</span></div>
+        <div class="stat-row"><span class="stat-label">2 tebakan</span><div class="stat-bar-wrap"><div class="stat-bar" id="dist-2" style="width:0%"></div></div><span class="stat-val" id="dv-2">0</span></div>
+        <div class="stat-row"><span class="stat-label">3 tebakan</span><div class="stat-bar-wrap"><div class="stat-bar" id="dist-3" style="width:0%"></div></div><span class="stat-val" id="dv-3">0</span></div>
+        <div class="stat-row"><span class="stat-label">4 tebakan</span><div class="stat-bar-wrap"><div class="stat-bar" id="dist-4" style="width:0%"></div></div><span class="stat-val" id="dv-4">0</span></div>
+        <div class="stat-row"><span class="stat-label">5 tebakan</span><div class="stat-bar-wrap"><div class="stat-bar" id="dist-5" style="width:0%"></div></div><span class="stat-val" id="dv-5">0</span></div>
+        <div class="stat-row"><span class="stat-label">6 tebakan</span><div class="stat-bar-wrap"><div class="stat-bar" id="dist-6" style="width:0%"></div></div><span class="stat-val" id="dv-6">0</span></div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- CENTER COLUMN -->
+  <div class="center-col">
+    <!-- grid -->
+    <div id="grid" role="grid" aria-label="Wordle grid"></div>
+
+    <!-- pips -->
+    <div class="pips-wrap" aria-hidden="true" id="pips-wrap">
+      <div class="pip" id="pip-0"></div>
+      <div class="pip" id="pip-1"></div>
+      <div class="pip" id="pip-2"></div>
+      <div class="pip" id="pip-3"></div>
+      <div class="pip" id="pip-4"></div>
+      <div class="pip" id="pip-5"></div>
+    </div>
+
+    <!-- action row -->
+    <div id="action-row">
+      <button id="play-again" aria-label="Mulai permainan baru">✦ &nbsp;Main Lagi&nbsp; ✦</button>
+    </div>
+
+    <!-- keyboard -->
+    <div id="keyboard" role="group" aria-label="Virtual keyboard"></div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <aside class="side-panel right">
+
+    <!-- Mini history of guesses this game -->
+    <div class="panel-card">
+      <div class="panel-title">Riwayat Tebakan</div>
+      <div id="guess-history">
+        <div class="history-row" id="hr-0"><span class="history-row-num active" id="hrn-0">1</span>
+          <div class="history-mini" id="hm-0-0"></div><div class="history-mini" id="hm-0-1"></div><div class="history-mini" id="hm-0-2"></div><div class="history-mini" id="hm-0-3"></div><div class="history-mini" id="hm-0-4"></div>
+        </div>
+        <div class="history-row" id="hr-1"><span class="history-row-num" id="hrn-1">2</span>
+          <div class="history-mini" id="hm-1-0"></div><div class="history-mini" id="hm-1-1"></div><div class="history-mini" id="hm-1-2"></div><div class="history-mini" id="hm-1-3"></div><div class="history-mini" id="hm-1-4"></div>
+        </div>
+        <div class="history-row" id="hr-2"><span class="history-row-num" id="hrn-2">3</span>
+          <div class="history-mini" id="hm-2-0"></div><div class="history-mini" id="hm-2-1"></div><div class="history-mini" id="hm-2-2"></div><div class="history-mini" id="hm-2-3"></div><div class="history-mini" id="hm-2-4"></div>
+        </div>
+        <div class="history-row" id="hr-3"><span class="history-row-num" id="hrn-3">4</span>
+          <div class="history-mini" id="hm-3-0"></div><div class="history-mini" id="hm-3-1"></div><div class="history-mini" id="hm-3-2"></div><div class="history-mini" id="hm-3-3"></div><div class="history-mini" id="hm-3-4"></div>
+        </div>
+        <div class="history-row" id="hr-4"><span class="history-row-num" id="hrn-4">5</span>
+          <div class="history-mini" id="hm-4-0"></div><div class="history-mini" id="hm-4-1"></div><div class="history-mini" id="hm-4-2"></div><div class="history-mini" id="hm-4-3"></div><div class="history-mini" id="hm-4-4"></div>
+        </div>
+        <div class="history-row" id="hr-5"><span class="history-row-num" id="hrn-5">6</span>
+          <div class="history-mini" id="hm-5-0"></div><div class="history-mini" id="hm-5-1"></div><div class="history-mini" id="hm-5-2"></div><div class="history-mini" id="hm-5-3"></div><div class="history-mini" id="hm-5-4"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Letter frequency for current game -->
+    <div class="panel-card">
+      <div class="panel-title">Frekuensi Rune</div>
+      <div id="freq-chart" style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-family:'Crimson Pro',serif;font-style:italic;font-size:0.75rem;color:var(--text-faint);text-align:center;">Mulai menebak untuk melihat data</div>
+      </div>
+    </div>
+
+    <!-- Achievements -->
+    <div class="panel-card">
+      <div class="panel-title">Pencapaian</div>
+      <div style="display:flex;flex-direction:column;gap:7px;" id="achievements-list">
+        <div class="achievement locked" id="ach-first">
+          <span class="achievement-icon">🔒</span>
+          <div class="achievement-info">
+            <span class="achievement-name">Penjelajah</span>
+            <span class="achievement-desc">Selesaikan 1 permainan</span>
+          </div>
+        </div>
+        <div class="achievement locked" id="ach-streak3">
+          <span class="achievement-icon">🔒</span>
+          <div class="achievement-info">
+            <span class="achievement-name">Api Abadi</span>
+            <span class="achievement-desc">Raih streak 3 kemenangan</span>
+          </div>
+        </div>
+        <div class="achievement locked" id="ach-first-try">
+          <span class="achievement-icon">🔒</span>
+          <div class="achievement-info">
+            <span class="achievement-name">Intuisi Gaib</span>
+            <span class="achievement-desc">Menang dengan 1 tebakan</span>
+          </div>
+        </div>
+        <div class="achievement locked" id="ach-win5">
+          <span class="achievement-icon">🔒</span>
+          <div class="achievement-info">
+            <span class="achievement-name">Arcanis Master</span>
+            <span class="achievement-desc">Menangkan 5 permainan</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+</div><!-- .app-body -->
+
+<script>
+/* ════════════════════════════════════════════════════
+   CANVAS ANIMATED BACKGROUND — stars + orb glow
+════════════════════════════════════════════════════ */
+(function(){
+  const canvas = document.getElementById('bg-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H, stars = [], orbs = [];
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    initStars();
+  }
+
+  function initStars() {
+    stars = [];
+    const count = Math.floor((W * H) / 4800);
+    for (let i = 0; i < count; i++) {
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 1.2 + 0.2,
+        a: Math.random(),
+        speed: Math.random() * 0.004 + 0.001,
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+    orbs = [
+      { x: W * 0.18, y: H * 0.22, r: 180, color: '#3b1f6e', phase: 0,    speed: 0.0008 },
+      { x: W * 0.82, y: H * 0.75, r: 220, color: '#1a134a', phase: 2.1,  speed: 0.0006 },
+      { x: W * 0.55, y: H * 0.45, r: 140, color: '#4c1d95', phase: 4.5,  speed: 0.0010 },
+      { x: W * 0.3,  y: H * 0.78, r: 100, color: '#6d2020', phase: 1.3,  speed: 0.0007 },
+    ];
+  }
+
+  let t = 0;
+  function frame() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Dark base
+    ctx.fillStyle = '#080610';
+    ctx.fillRect(0, 0, W, H);
+
+    // Orbs
+    orbs.forEach(o => {
+      const ox = o.x + Math.sin(t * o.speed + o.phase) * 60;
+      const oy = o.y + Math.cos(t * o.speed * 1.3 + o.phase) * 40;
+      const g  = ctx.createRadialGradient(ox, oy, 0, ox, oy, o.r);
+      g.addColorStop(0, o.color + 'cc');
+      g.addColorStop(0.5, o.color + '44');
+      g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(ox, oy, o.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Stars
+    stars.forEach(s => {
+      const a = 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(t * s.speed * 1000 + s.phase));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${180 + Math.random() * 30}, ${160 + Math.random() * 30}, ${230 + Math.random() * 25}, ${a * 0.8})`;
+      ctx.fill();
+    });
+
+    t++;
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  frame();
+})();
+
+/* ════════════════════════════════════════════════════
+   AUDIO
+════════════════════════════════════════════════════ */
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+}
+function tone(freq, dur, type='sine', gain=0.18, delay=0) {
+  if (!audioCtx) return;
+  try {
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.type=type; o.frequency.setValueAtTime(freq, audioCtx.currentTime+delay);
+    g.gain.setValueAtTime(gain, audioCtx.currentTime+delay);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+delay+dur);
+    o.start(audioCtx.currentTime+delay); o.stop(audioCtx.currentTime+delay+dur+0.01);
+  } catch(e){}
+}
+function sweep(f1,f2,dur,type,gain,delay=0) {
+  if (!audioCtx) return;
+  try {
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.type=type; o.frequency.setValueAtTime(f1,audioCtx.currentTime+delay);
+    o.frequency.linearRampToValueAtTime(f2,audioCtx.currentTime+delay+dur);
+    g.gain.setValueAtTime(gain,audioCtx.currentTime+delay);
+    g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+delay+dur);
+    o.start(audioCtx.currentTime+delay); o.stop(audioCtx.currentTime+delay+dur+0.02);
+  } catch(e){}
+}
+const SFX = {
+  key()     { ensureAudio(); tone(820,0.045,'square',0.07); },
+  submit()  { ensureAudio(); sweep(420,180,0.09,'sawtooth',0.1); },
+  win()     { ensureAudio(); [523,587,659,784,1047].forEach((f,i)=>tone(f,0.16,'sine',0.2,i*0.12)); },
+  lose()    { ensureAudio(); [320,210,160].forEach((f,i)=>tone(f,0.2,'sawtooth',0.13,i*0.17)); },
+  invalid() { ensureAudio(); tone(140,0.07,'square',0.13); },
+};
+
+/* ════════════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════════════ */
+function toast(msg, dur=2200) {
+  const c=document.getElementById('toast-container');
+  const el=document.createElement('div'); el.className='toast'; el.textContent=msg;
+  c.appendChild(el);
+  setTimeout(()=>{ el.classList.add('fade-out'); setTimeout(()=>el.remove(),500); }, dur);
+}
+
+/* ════════════════════════════════════════════════════
+   SESSION STATS (in-memory)
+════════════════════════════════════════════════════ */
+const stats = {
+  played: 0, wins: 0, streak: 0, maxStreak: 0,
+  best: Infinity, dist: {1:0,2:0,3:0,4:0,5:0,6:0},
+};
+function updateStatsDOM() {
+  document.getElementById('stat-played').textContent  = stats.played;
+  document.getElementById('stat-wins').textContent    = stats.wins;
+  document.getElementById('stat-streak').textContent  = stats.streak;
+  document.getElementById('stat-best').textContent    = stats.best === Infinity ? '—' : stats.best;
+  document.getElementById('stat-maxstreak').textContent = stats.maxStreak;
+  const wr = stats.played > 0 ? Math.round((stats.wins/stats.played)*100) : 0;
+  document.getElementById('stat-winrate').textContent = wr + '%';
+  // Distribution bars
+  const maxD = Math.max(1, ...Object.values(stats.dist));
+  for (let i=1;i<=6;i++) {
+    const v = stats.dist[i];
+    document.getElementById(`dist-${i}`).style.width = (v/maxD*100)+'%';
+    document.getElementById(`dv-${i}`).textContent   = v;
+  }
+  checkAchievements();
+}
+
+/* ════════════════════════════════════════════════════
+   ACHIEVEMENTS
+════════════════════════════════════════════════════ */
+const achUnlocked = { first: false, streak3: false, firstTry: false, win5: false };
+function checkAchievements() {
+  if (!achUnlocked.first && stats.played >= 1) {
+    achUnlocked.first = true;
+    unlockAch('ach-first', '⚔️', 'Penjelajah', 'Permainan pertama selesai!');
+  }
+  if (!achUnlocked.streak3 && stats.streak >= 3) {
+    achUnlocked.streak3 = true;
+    unlockAch('ach-streak3', '🔥', 'Api Abadi', '3 kemenangan berturut-turut!');
+  }
+  if (!achUnlocked.firstTry && stats.dist[1] >= 1) {
+    achUnlocked.firstTry = true;
+    unlockAch('ach-first-try', '⭐', 'Intuisi Gaib', 'Menang hanya dengan 1 tebakan!');
+  }
+  if (!achUnlocked.win5 && stats.wins >= 5) {
+    achUnlocked.win5 = true;
+    unlockAch('ach-win5', '👑', 'Arcanis Master', '5 kemenangan total!');
+  }
+}
+function unlockAch(id, icon, name, desc) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('locked'); el.classList.add('unlocked');
+  el.querySelector('.achievement-icon').textContent = icon;
+  el.querySelector('.achievement-name').textContent = name;
+  el.querySelector('.achievement-desc').textContent = desc;
+  toast('✦ Pencapaian Baru: ' + name + ' ✦', 3000);
+}
+
+/* ════════════════════════════════════════════════════
+   LORE FLAVOR ROTATION
+════════════════════════════════════════════════════ */
+const loreTexts = [
+  'Di menara kuno <strong>Arcanis</strong>, setiap kata menyimpan mantra. Ungkap kata rahasia sebelum <strong>6 mantra</strong> habis.',
+  'Sang penyihir berbisik: <strong>"Kata yang hilang akan melemahkanmu."</strong> Temukan rune yang tersembunyi dalam kabut.',
+  'Kitab <strong>Lexicon Gaib</strong> hanya terbuka bagi mereka yang memiliki ketajaman pikiran dan keberanian jiwa.',
+  'Tujuh alam tersegel oleh <strong>satu kata</strong>. Hanya kamu yang bisa membukanya — sebelum fajar tiba.',
+  'Dari <strong>888 kata kuno</strong>, satu dipilih oleh takdir. Dapatkah kamu menemukannya?',
+];
+function rotateLore() {
+  const el = document.getElementById('lore-text');
+  if (!el) return;
+  const idx = Math.floor(Math.random() * loreTexts.length);
+  el.innerHTML = loreTexts[idx];
+}
+
+/* ════════════════════════════════════════════════════
+   GAME STATE
+════════════════════════════════════════════════════ */
+const ROWS=6, COLS=5;
+let state = {
+  dictionary:[], secretWord:'',
+  guesses: Array.from({length:ROWS},()=>Array(COLS).fill('')),
+  colorMap: Array.from({length:ROWS},()=>Array(COLS).fill('')),
+  currentRow:0, currentCol:0,
+  gameOver:false, animating:false, keyColors:{},
+};
+
+/* ════════════════════════════════════════════════════
+   LOAD DICTIONARY
+════════════════════════════════════════════════════ */
+async function loadDictionary() {
+  try {
+    const res  = await fetch('./words.txt');
+    const text = await res.text();
+    const set  = new Set();
+    text.split('\n').forEach(line => {
+      line.replace(/^\s*\d+\s*\t/,'').split(',').forEach(w => {
+        const word = w.trim().toLowerCase().replace(/[^a-z]/g,'');
+        if (word.length===5) set.add(word);
+      });
+    });
+    return [...set];
+  } catch(e) { return []; }
+}
+
+/* ════════════════════════════════════════════════════
+   BUILD DOM
+════════════════════════════════════════════════════ */
+function buildGrid() {
+  const g = document.getElementById('grid');
+  g.innerHTML = '';
+  for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+    const t=document.createElement('div');
+    t.className='tile'; t.id=`t-${r}-${c}`;
+    t.setAttribute('role','gridcell');
+    g.appendChild(t);
+  }
+}
+
+const KBR = [
+  ['Q','W','E','R','T','Y','U','I','O','P'],
+  ['A','S','D','F','G','H','J','K','L'],
+  ['ENTER','Z','X','C','V','B','N','M','⌫']
+];
+function buildKeyboard() {
+  const kb = document.getElementById('keyboard');
+  kb.innerHTML = '';
+  KBR.forEach(row => {
+    const rowEl=document.createElement('div'); rowEl.className='kb-row';
+    row.forEach(k => {
+      const btn=document.createElement('button');
+      btn.className='key'+(k==='ENTER'||k==='⌫'?' wide':'');
+      btn.textContent=k; btn.dataset.key=k;
+      btn.setAttribute('aria-label', k==='⌫'?'Backspace':k==='ENTER'?'Enter':k);
+      btn.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        handleKey(k==='⌫'?'Backspace':k==='ENTER'?'Enter':k);
+      });
+      rowEl.appendChild(btn);
+    });
+    kb.appendChild(rowEl);
+  });
+}
+
+/* ════════════════════════════════════════════════════
+   TILE HELPERS
+════════════════════════════════════════════════════ */
+const gt = (r,c) => document.getElementById(`t-${r}-${c}`);
+function setLetter(r,c,ch) {
+  const t=gt(r,c);
+  t.textContent=ch?ch.toUpperCase():'';
+  ch?t.classList.add('filled'):t.classList.remove('filled');
+}
+
+/* ════════════════════════════════════════════════════
+   PIPS
+════════════════════════════════════════════════════ */
+function updatePips() {
+  for (let i=0;i<ROWS;i++) {
+    const p=document.getElementById(`pip-${i}`);
+    p.className = i<state.currentRow?'pip used':
+                  (i===state.currentRow&&!state.gameOver)?'pip active':'pip';
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   HISTORY PANEL
+════════════════════════════════════════════════════ */
+function updateHistoryRow(row, guess, colors) {
+  for (let c=0;c<COLS;c++) {
+    const el=document.getElementById(`hm-${row}-${c}`);
+    if (!el) continue;
+    el.textContent=guess[c].toUpperCase();
+    el.className='history-mini '+colors[c][0]; // c, p, or a
+  }
+  // update row number styling
+  for (let r=0;r<ROWS;r++) {
+    const n=document.getElementById(`hrn-${r}`);
+    if (!n) continue;
+    n.className='history-row-num'+(r===state.currentRow&&!state.gameOver?' active':'');
+  }
+}
+function clearHistory() {
+  for (let r=0;r<ROWS;r++) {
+    document.getElementById(`hrn-${r}`).className='history-row-num'+(r===0?' active':'');
+    for (let c=0;c<COLS;c++) {
+      const el=document.getElementById(`hm-${r}-${c}`);
+      if (el) { el.className='history-mini'; el.textContent=''; }
+    }
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   FREQUENCY CHART
+════════════════════════════════════════════════════ */
+function updateFreqChart() {
+  const chart=document.getElementById('freq-chart');
+  // Count letters used and their colors so far
+  const freq={};
+  for (let r=0;r<state.currentRow;r++) {
+    state.guesses[r].forEach((ch,c)=>{
+      if (!ch) return;
+      const key=ch.toLowerCase();
+      if (!freq[key]) freq[key]={count:0,color:'a'};
+      freq[key].count++;
+      const col=state.colorMap[r][c];
+      const rank={correct:3,present:2,absent:1,a:1,p:2,c:3};
+      if ((rank[col]||0)>(rank[freq[key].color]||0)) freq[key].color=col.charAt(0);
+    });
+  }
+  const letters=Object.keys(freq).sort((a,b)=>freq[b].count-freq[a].count).slice(0,10);
+  if (!letters.length) {
+    chart.innerHTML='<div style="font-family:\'Crimson Pro\',serif;font-style:italic;font-size:0.75rem;color:var(--text-faint);text-align:center;">Mulai menebak untuk melihat data</div>';
+    return;
+  }
+  const maxC=Math.max(...letters.map(l=>freq[l].count),1);
+  chart.innerHTML=letters.map(l=>{
+    const f=freq[l]; const pct=Math.round((f.count/maxC)*100);
+    const barClass=f.color==='c'?'c-bar':f.color==='p'?'p-bar':'';
+    return `<div class="freq-row">
+      <span class="freq-letter">${l.toUpperCase()}</span>
+      <div class="freq-bar-wrap"><div class="freq-bar ${barClass}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════════
+   COLOR LOGIC
+════════════════════════════════════════════════════ */
+function computeColors(guess, secret) {
+  const res=Array(COLS).fill('absent');
+  const sl=secret.split(''), gl=guess.split('');
+  for (let i=0;i<COLS;i++) if (gl[i]===sl[i]) { res[i]='correct'; sl[i]=null; gl[i]=null; }
+  for (let i=0;i<COLS;i++) {
+    if (gl[i]===null) continue;
+    const j=sl.indexOf(gl[i]);
+    if (j!==-1) { res[i]='present'; sl[j]=null; }
+  }
+  return res;
+}
+
+/* ════════════════════════════════════════════════════
+   KEY COLOR
+════════════════════════════════════════════════════ */
+const RANK={correct:3,present:2,absent:1,'':0};
+function applyKeyColors(guess, colors) {
+  guess.split('').forEach((ch,i)=>{
+    const k=ch.toUpperCase(), cur=state.keyColors[k]||'';
+    if ((RANK[colors[i]]||0)>(RANK[cur]||0)) state.keyColors[k]=colors[i];
+  });
+  document.querySelectorAll('.key').forEach(btn=>{
+    const k=btn.dataset.key;
+    if (!k||k.length!==1) return;
+    const col=state.keyColors[k]||'';
+    btn.className='key'+(col?' '+col:'');
+  });
+}
+
+/* ════════════════════════════════════════════════════
+   ANIMATIONS
+════════════════════════════════════════════════════ */
+function animFlip(row, colors) {
+  return new Promise(resolve=>{
+    let done=0;
+    for (let c=0;c<COLS;c++) {
+      const tile=gt(row,c), col=colors[c];
+      setTimeout(()=>{
+        tile.classList.add('flip');
+        setTimeout(()=>tile.classList.add(col), 260);
+        tile.addEventListener('animationend',function h(){
+          tile.removeEventListener('animationend',h);
+          tile.classList.remove('flip');
+          if (++done===COLS) resolve();
+        });
+      }, c*130);
+    }
+  });
+}
+function animShake(row) {
+  for (let c=0;c<COLS;c++) {
+    const t=gt(row,c);
+    t.classList.remove('shake'); void t.offsetWidth;
+    t.classList.add('shake');
+    t.addEventListener('animationend',function h(){t.removeEventListener('animationend',h);t.classList.remove('shake');},{once:true});
+  }
+}
+function animBounce(row) {
+  return new Promise(resolve=>{
+    let done=0;
+    for (let c=0;c<COLS;c++) {
+      const t=gt(row,c);
+      setTimeout(()=>{
+        t.classList.add('bounce');
+        t.addEventListener('animationend',function h(){t.removeEventListener('animationend',h);t.classList.remove('bounce');if(++done===COLS)resolve();});
+      }, c*110);
+    }
+  });
+}
+
+/* ════════════════════════════════════════════════════
+   SUBMIT
+════════════════════════════════════════════════════ */
+async function submitGuess() {
+  const {currentRow,currentCol,guesses,secretWord,dictionary}=state;
+  if (currentCol<COLS) { SFX.invalid(); animShake(currentRow); toast('Tidak cukup huruf!'); return; }
+  const guess=guesses[currentRow].join('').toLowerCase();
+  if (!dictionary.includes(guess)) { SFX.invalid(); animShake(currentRow); toast('Kata tidak ditemukan!'); return; }
+
+  state.animating=true;
+  SFX.submit();
+  const colors=computeColors(guess, secretWord);
+  state.colorMap[currentRow]=colors;
+
+  await animFlip(currentRow, colors);
+  applyKeyColors(guess, colors);
+  updateHistoryRow(currentRow, state.guesses[currentRow], colors);
+  updateFreqChart();
+
+  const isWin=colors.every(c=>c==='correct');
+  if (isWin) {
+    const msgs=['✦ Luar Biasa! ✦','✦ Hebat Sekali! ✦','✦ Sempurna! ✦','✦ Keren! ✦','✦ Brilian! ✦'];
+    toast(msgs[Math.floor(Math.random()*msgs.length)], 2800);
+    SFX.win();
+    await animBounce(currentRow);
+    state.currentRow++;
+    state.gameOver=true;
+    // stats
+    stats.played++; stats.wins++; stats.streak++;
+    if (stats.streak>stats.maxStreak) stats.maxStreak=stats.streak;
+    const att=currentRow+1;
+    if (att<stats.best) stats.best=att;
+    stats.dist[att]=(stats.dist[att]||0)+1;
+    updateStatsDOM();
+    updatePips();
+    document.getElementById('play-again').classList.add('visible');
+  } else {
+    state.currentRow++;
+    state.currentCol=0;
+    updatePips();
+    if (state.currentRow>=ROWS) {
+      setTimeout(()=>{
+        toast('Kata rahasia: '+secretWord.toUpperCase(), 5000);
+        SFX.lose();
+        state.gameOver=true;
+        stats.played++; stats.streak=0;
+        updateStatsDOM(); updatePips();
+        document.getElementById('play-again').classList.add('visible');
+      }, 300);
+    }
+  }
+  state.animating=false;
+}
+
+/* ════════════════════════════════════════════════════
+   INPUT
+════════════════════════════════════════════════════ */
+function handleKey(key) {
+  ensureAudio();
+  if (state.gameOver||state.animating) return;
+  const {currentRow,currentCol,guesses}=state;
+  if (key==='Enter') { submitGuess(); return; }
+  if (key==='Backspace') {
+    if (currentCol>0) { state.currentCol--; guesses[currentRow][state.currentCol]=''; setLetter(currentRow,state.currentCol,''); SFX.key(); }
+    return;
+  }
+  if (/^[a-zA-Z]$/.test(key)&&currentCol<COLS) {
+    guesses[currentRow][currentCol]=key.toLowerCase();
+    setLetter(currentRow,currentCol,key);
+    state.currentCol++; SFX.key();
+  }
+}
+document.addEventListener('keydown', e=>{
+  if (e.ctrlKey||e.metaKey||e.altKey) return;
+  handleKey(e.key);
+});
+
+/* ════════════════════════════════════════════════════
+   RESET
+════════════════════════════════════════════════════ */
+function resetGame() {
+  const word=state.dictionary[Math.floor(Math.random()*state.dictionary.length)];
+  state.secretWord=word;
+  state.guesses=Array.from({length:ROWS},()=>Array(COLS).fill(''));
+  state.colorMap=Array.from({length:ROWS},()=>Array(COLS).fill(''));
+  state.currentRow=0; state.currentCol=0;
+  state.gameOver=false; state.animating=false; state.keyColors={};
+  buildGrid(); buildKeyboard(); updatePips(); clearHistory();
+  document.getElementById('play-again').classList.remove('visible');
+  updateFreqChart(); rotateLore();
+}
+
+document.getElementById('play-again').addEventListener('click',()=>{ ensureAudio(); resetGame(); });
+
+/* ════════════════════════════════════════════════════
+   BOOT
+════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════
+   DICTIONARY VIEWER
+═══════════════════════════════════════════════════ */
+(function(){
+  let dictFilter='all', dictSort='az', dictQuery='';
+  const overlay=document.getElementById('dict-overlay');
+
+  function openDict() {
+    overlay.classList.add('open');
+    setTimeout(()=>document.getElementById('dict-search').focus(), 50);
+    renderDict();
+  }
+  function closeDict() {
+    overlay.classList.remove('open');
+  }
+
+  document.getElementById('open-dict').addEventListener('click', openDict);
+  document.getElementById('close-dict').addEventListener('click', closeDict);
+  overlay.addEventListener('pointerdown', e=>{ if(e.target===overlay) closeDict(); });
+  document.addEventListener('keydown', e=>{
+    if (e.key==='Escape' && overlay.classList.contains('open')) { closeDict(); e.stopPropagation(); }
+  }, true);
+
+  // Filter buttons
+  document.querySelectorAll('.dict-filter-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      dictFilter=btn.dataset.filter;
+      document.querySelectorAll('.dict-filter-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      renderDict();
+    });
+  });
+
+  // Sort buttons
+  document.querySelectorAll('.dict-sort-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      dictSort=btn.dataset.sort;
+      document.querySelectorAll('.dict-sort-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      renderDict();
+    });
+  });
+
+  // Search input — also block game keys when modal open
+  const searchEl=document.getElementById('dict-search');
+  searchEl.addEventListener('keydown', e=>e.stopPropagation());
+  searchEl.addEventListener('input', e=>{
+    dictQuery=e.target.value.trim().toLowerCase().replace(/[^a-z]/g,'');
+    renderDict();
+  });
+
+  function renderDict(){
+    const dict=state.dictionary;
+    if (!dict || !dict.length) return;
+    const q=dictQuery;
+    const grid=document.getElementById('dict-grid');
+
+    // Filter
+    let words=dict.filter(w=>{
+      if (!q) return true;
+      if (dictFilter==='starts')   return w.startsWith(q);
+      if (dictFilter==='ends')     return w.endsWith(q);
+      if (dictFilter==='contains') return w.includes(q);
+      return w.includes(q); // 'all'
+    });
+
+    // Sort
+    if (dictSort==='az')  words=[...words].sort((a,b)=>a.localeCompare(b));
+    if (dictSort==='za')  words=[...words].sort((a,b)=>b.localeCompare(a));
+    if (dictSort==='len') words=[...words].sort((a,b)=>a.localeCompare(b));
+
+    // Guessed words this game
+    const guessedWords=new Set();
+    for (let r=0;r<state.currentRow;r++) {
+      const w=state.guesses[r].join('').toLowerCase();
+      if (w.length===5) guessedWords.add(w);
+    }
+
+    // Count display
+    document.getElementById('dict-count').innerHTML=
+      '<strong>'+words.length+'</strong> dari '+dict.length+' kata';
+
+    if (!words.length) {
+      grid.innerHTML='<div class="dict-empty">\u2734 Tidak ada kata yang cocok</div>';
+      return;
+    }
+
+    const frag=document.createDocumentFragment();
+    words.forEach(w=>{
+      const el=document.createElement('div');
+      el.className='dict-word';
+      el.setAttribute('role','listitem');
+      el.textContent=w.toUpperCase();
+      el.title='Klik untuk isi ke baris tebakan';
+      el.style.cursor='pointer';
+
+      if (guessedWords.has(w))        el.classList.add('used-word');
+      else if (q && w===q)            el.classList.add('match-exact');
+      else if (q && w.includes(q))    el.classList.add('match-letter');
+
+      el.addEventListener('click',()=>{
+        if (state.gameOver || state.animating) return;
+        const row=state.currentRow;
+        if (row>=ROWS) return;
+        // clear existing letters in row
+        for (let c=0;c<state.currentCol;c++) {
+          state.guesses[row][c]='';
+          const t=document.getElementById('t-'+row+'-'+c);
+          if(t){ t.textContent=''; t.classList.remove('filled'); }
+        }
+        state.currentCol=0;
+        // fill row with clicked word
+        for (let c=0;c<COLS;c++) {
+          state.guesses[row][c]=w[c];
+          const t=document.getElementById('t-'+row+'-'+c);
+          if(t){ t.textContent=w[c].toUpperCase(); t.classList.add('filled'); }
+        }
+        state.currentCol=COLS;
+        closeDict();
+        toast('\u2714 "'+w.toUpperCase()+'" diisi ke baris tebakan', 1800);
+      });
+      frag.appendChild(el);
+    });
+    grid.innerHTML='';
+    grid.appendChild(frag);
+  }
+
+  window._renderDict=renderDict;
+})();
+
+(async()=>{
+  const dict=await loadDictionary();
+  const loadEl=document.getElementById('loading');
+  if (!dict.length) {
+    loadEl.querySelector('.loading-text').textContent='Gagal memuat kamus. Letakkan words.txt di folder yang sama.';
+    return;
+  }
+  state.dictionary=dict;
+  loadEl.style.opacity='0';
+  loadEl.style.transition='opacity 0.5s';
+  setTimeout(()=>{ loadEl.style.display='none'; }, 500);
+  resetGame(); updateStatsDOM();
+})();
+</script>
+<script data-pplx-inline-edit>
+(function(){
+  if(window===window.top)return;
+  function inlineAll(orig,clone){
+    if(orig.nodeType!==1)return;
+    try{
+      var cs=getComputedStyle(orig);
+      var t='';
+      for(var i=0;i<cs.length;i++){t+=cs[i]+':'+cs.getPropertyValue(cs[i])+';';}
+      clone.style.cssText=t;
+    }catch(e){}
+    var oc=orig.children,cc=clone.children;
+    for(var j=0;j<oc.length&&j<cc.length;j++){inlineAll(oc[j],cc[j]);}
+  }
+  function stripExternal(clone){
+    var imgs=clone.querySelectorAll('img');
+    for(var i=0;i<imgs.length;i++){
+      var s=imgs[i].getAttribute('src');
+      if(s&&!s.startsWith('data:'))imgs[i].removeAttribute('src');
+    }
+    var all=clone.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){
+      var st=all[i].style.cssText;
+      if(st&&st.indexOf('url(')>=0){
+        all[i].style.cssText=st.replace(/url\(["']?(?!data:)[^)"']*["']?\)/gi,'none');
+      }
+    }
+  }
+  var scrollRaf=0;
+  function emitScroll(){
+    scrollRaf=0;
+    var x=window.scrollX||window.pageXOffset||0;
+    var y=window.scrollY||window.pageYOffset||0;
+    window.parent.postMessage({type:'INLINE_EDIT_SCROLL',scrollX:x,scrollY:y},'*');
+  }
+  window.addEventListener('scroll',function(){
+    if(scrollRaf)return;
+    scrollRaf=requestAnimationFrame(emitScroll);
+  },{passive:true,capture:true});
+  emitScroll();
+  window.addEventListener('message',function(e){
+    if(!e.data||e.data.type!=='INLINE_EDIT_CAPTURE_REQUEST')return;
+    var scrollX=window.scrollX||window.pageXOffset||0;
+    var scrollY=window.scrollY||window.pageYOffset||0;
+    var w=window.innerWidth,h=window.innerHeight;
+    try{
+      var clone=document.documentElement.cloneNode(true);
+      var rm=clone.querySelectorAll('script,link[rel="stylesheet"],style');
+      for(var i=0;i<rm.length;i++){rm[i].remove();}
+      inlineAll(document.documentElement,clone);
+      stripExternal(clone);
+      var html=new XMLSerializer().serializeToString(clone);
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'
+        +'<foreignObject width="100%" height="100%">'
+        +'<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+w+'px;height:'+h+'px;overflow:hidden">'
+        +'<div style="transform:translate(-'+scrollX+'px,-'+scrollY+'px);transform-origin:top left">'
+        +html+'</div></div></foreignObject></svg>';
+      var svgUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+      var img=new Image();
+      img.onload=function(){
+        var c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0);
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:c.toDataURL('image/png'),scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.onerror=function(){
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.src=svgUrl;
+    }catch(err){
+      window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+    }
+  });
+})();
+</script></body>
+</html>
