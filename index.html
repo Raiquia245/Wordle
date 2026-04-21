@@ -29,8 +29,8 @@
   --text:        #e2d5f8;
   --text-muted:  #8b7aae;
   --text-faint:  #46385e;
-  --tile-sz:     74px;
-  --tile-gap:    7px;
+  --tile-sz:     clamp(48px, 6.5vmin, 74px);
+  --tile-gap:    clamp(4px, 0.6vmin, 7px);
 
   --tile-correct-bg: #14532d;
   --tile-correct-bd: #4ade80;
@@ -51,8 +51,7 @@
    RESET & BASE
 ════════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; }
-html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+html { height: 100%; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
 body {
   font-family: 'Cinzel', serif;
   background: var(--bg);
@@ -60,7 +59,8 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   position: relative;
 }
 
@@ -97,22 +97,31 @@ header, .app-body { position: relative; z-index: 2; }
 header {
   flex-shrink: 0;
   width: 100%;
-  padding: 0 40px;
-  height: 64px;
+  padding: 0 clamp(12px, 2.5vw, 40px);
+  height: auto;
+  min-height: 58px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 10px;
+  padding-bottom: 10px;
   border-bottom: 1px solid;
   border-image: linear-gradient(90deg, transparent 0%, var(--gold-dim) 25%, var(--gold) 50%, var(--gold-dim) 75%, transparent 100%) 1;
   background: linear-gradient(180deg, #0e0b1aee 0%, transparent 100%);
   backdrop-filter: blur(4px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .header-left, .header-right {
   display: flex;
   align-items: center;
-  gap: 20px;
-  min-width: 220px;
+  gap: clamp(8px, 1.5vw, 20px);
+  min-width: 0;
+  flex-wrap: wrap;
 }
 .header-right { justify-content: flex-end; }
 
@@ -123,7 +132,7 @@ header {
   gap: 1px;
 }
 .header-stat-val {
-  font-size: 1.28rem;
+  font-size: clamp(0.9rem, 1.5vw, 1.28rem);
   font-weight: 700;
   color: var(--gold);
   line-height: 1;
@@ -132,10 +141,11 @@ header {
 .header-stat-label {
   font-family: 'Crimson Pro', serif;
   font-style: italic;
-  font-size: 0.72rem;
+  font-size: clamp(0.55rem, 0.8vw, 0.72rem);
   color: var(--text-muted);
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 .header-divider {
   width: 1px;
@@ -146,10 +156,15 @@ header {
 
 /* ── LOGO ── */
 .logo-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3px;
+  pointer-events: none;
+  z-index: 1;
 }
 .logo-row {
   display: flex;
@@ -189,7 +204,7 @@ header {
   flex: 1;
   display: grid;
   grid-template-columns: 260px 1fr 260px;
-  grid-template-rows: 1fr;
+  grid-template-rows: auto;
   min-height: 0;
   padding: 0;
 }
@@ -204,6 +219,10 @@ header {
   gap: 18px;
   border-right: 1px solid var(--border);
   overflow-y: auto;
+  max-height: calc(100vh - 80px);
+  position: sticky;
+  top: 80px;
+  align-self: flex-start;
 }
 .side-panel.right {
   border-right: none;
@@ -425,11 +444,11 @@ header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-evenly;
-  padding: 16px 20px;
-  gap: 12px;
+  justify-content: flex-start;
+  padding: clamp(12px, 2vh, 24px) 20px clamp(16px, 2.5vh, 32px);
+  gap: clamp(8px, 1.5vh, 16px);
   min-height: 0;
-  height: 100%;
+  width: 100%;
 }
 
 /* ── GRID ── */
@@ -447,7 +466,7 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.2rem;
+  font-size: clamp(1.2rem, 3.2vmin, 2.2rem);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -527,21 +546,22 @@ header {
 #keyboard {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: clamp(4px, 0.8vh, 8px);
   align-items: center;
   width: 100%;
-  max-width: 520px;
+  max-width: min(520px, 98vw);
+  flex-shrink: 0;
 }
-.kb-row { display: flex; gap: 5px; justify-content: center; }
+.kb-row { display: flex; gap: clamp(3px, 0.5vw, 6px); justify-content: center; }
 .key {
-  height: 58px;
-  min-width: 44px;
-  padding: 0 5px;
+  height: clamp(40px, 6.5vh, 58px);
+  min-width: clamp(30px, 4.5vw, 44px);
+  padding: 0 clamp(2px, 0.4vw, 5px);
   background: linear-gradient(170deg, #201838 0%, #160f28 100%);
   border: 1px solid var(--key-bd);
   color: var(--text);
   font-family: 'Cinzel', serif;
-  font-size: 0.85rem;
+  font-size: clamp(0.65rem, 1.1vw, 0.85rem);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -570,7 +590,7 @@ header {
 }
 .key:hover { border-color: var(--border-glow); box-shadow: 0 0 8px #6d4fc230; transform: translateY(-1px); }
 .key:active { transform: scale(0.93) translateY(0); }
-.key.wide { min-width: 68px; font-size: 0.72rem; }
+.key.wide { min-width: clamp(50px, 7.5vw, 68px); font-size: clamp(0.6rem, 0.9vw, 0.72rem); }
 
 /* key states */
 .key.correct {
@@ -720,22 +740,49 @@ header {
    RESPONSIVE — tablets / smaller laptops
 ════════════════════════════════════════════════ */
 @media (max-width: 1100px) {
-  .app-body { grid-template-columns: 220px 1fr 220px; }
-  .side-panel { padding: 20px 14px; }
+  .app-body { grid-template-columns: 200px 1fr 200px; }
+  .side-panel { padding: 18px 12px; }
+}
+@media (max-width: 920px) {
+  .app-body { grid-template-columns: 160px 1fr 160px; }
+  .side-panel { padding: 14px 10px; }
+  .panel-card { padding: 12px; }
 }
 @media (max-width: 860px) {
   .app-body { grid-template-columns: 1fr; }
   .side-panel { display: none; }
-  body { overflow-y: auto; }
-  .center-col { padding: 16px 12px 16px; justify-content: flex-start; }
-  :root { --tile-sz: 58px; --tile-gap: 5px; }
-  .key { height: 48px; min-width: 34px; }
-  .key.wide { min-width: 52px; }
+  .center-col { padding: 12px 8px 20px; }
 }
-@media (max-width: 400px) {
-  :root { --tile-sz: 50px; --tile-gap: 4px; }
-  .key { min-width: 30px; height: 44px; font-size: 0.68rem; }
-  .key.wide { min-width: 46px; }
+/* Height-based: when viewport is short, shrink key/tile sizes */
+@media (max-height: 680px) {
+  :root {
+    --tile-sz: clamp(40px, 8.5vmin, 58px);
+    --tile-gap: clamp(3px, 0.5vmin, 5px);
+  }
+  .key { height: clamp(34px, 5.5vh, 46px); }
+  .center-col { gap: clamp(6px, 1vh, 10px); padding-top: 8px; padding-bottom: 12px; }
+  #keyboard { gap: clamp(3px, 0.5vh, 5px); }
+  .kb-row { gap: clamp(2px, 0.4vw, 4px); }
+}
+@media (max-height: 560px) {
+  :root {
+    --tile-sz: clamp(32px, 7vmin, 46px);
+    --tile-gap: clamp(2px, 0.4vmin, 4px);
+  }
+  .key { height: clamp(28px, 4.5vh, 38px); font-size: clamp(0.6rem, 1.2vw, 0.75rem); }
+  .center-col { gap: 5px; padding-top: 6px; padding-bottom: 8px; }
+  .pips-wrap { padding: 0; }
+}
+@media (max-width: 480px) {
+  :root { --tile-sz: clamp(44px, 13vw, 58px); --tile-gap: clamp(3px, 0.8vw, 5px); }
+  .key { min-width: clamp(26px, 7.5vw, 36px); }
+  .key.wide { min-width: clamp(42px, 12vw, 54px); }
+  .logo-title { font-size: clamp(1.2rem, 5vw, 1.8rem); }
+}
+@media (max-width: 360px) {
+  :root { --tile-sz: clamp(38px, 11.5vw, 48px); --tile-gap: 3px; }
+  .key { min-width: clamp(22px, 7vw, 30px); font-size: 0.65rem; }
+  .key.wide { min-width: clamp(38px, 11vw, 48px); }
 }
 
 /* ════════════════════════════════════════════════
